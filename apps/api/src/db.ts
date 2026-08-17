@@ -66,6 +66,8 @@ export function initDb() {
 
     CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_assignee_id ON tasks(assignee_id);
+    CREATE INDEX IF NOT EXISTS idx_tasks_title ON tasks(title);
+    CREATE INDEX IF NOT EXISTS idx_tasks_description ON tasks(description);
     CREATE INDEX IF NOT EXISTS idx_project_members_user_id ON project_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_project_members_project_id ON project_members(project_id);
   `);

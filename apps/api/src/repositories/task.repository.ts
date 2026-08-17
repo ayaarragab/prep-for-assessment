@@ -77,8 +77,8 @@ export class TaskRepository {
 
   static search(query: string) {
     const stmt = db.prepare(
-      "SELECT id, project_id as projectId, title, description, status, assignee_id as assigneeId, creator_id as creatorId, created_at as createdAt, updated_at as updatedAt FROM tasks WHERE title LIKE ? OR description LIKE ?",
+      "SELECT id, project_id as projectId, title, description, status, assignee_id as assigneeId, creator_id as creatorId, created_at as createdAt, updated_at as updatedAt FROM tasks WHERE title LIKE ? OR description LIKE ? ORDER BY created_at DESC",
     );
-    return stmt.all(`%${query}%`, `%${query}%`) as any[];
+    return stmt.all(`${query}%`, `${query}%`) as any[];
   }
 }
