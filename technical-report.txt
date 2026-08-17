@@ -13,6 +13,7 @@ The application uses a hard-coded fallback value for `JWT_SECRET` when the envir
 The registration endpoint returns the complete `user` object, which includes the user's hashed password. Although the password is hashed, password hashes are sensitive credentials and should never be exposed to clients.
 
 **Solution:** Remove the password field from the user object before returning the registration response, consistently with the existing login implementation.
+**Status**: solved
 
 ---
 
@@ -21,6 +22,7 @@ The registration endpoint returns the complete `user` object, which includes the
 The current validation only checks whether `email`, `password`, and `name` are present. It does not validate their types, format, length, or acceptable values.
 
 **Solution:** Introduce a centralized input-validation layer using a schema validation library or equivalent validation mechanism. Validate and sanitize all externally controlled input before it reaches business logic or database operations.
+**Status**: solved
 
 ---
 
