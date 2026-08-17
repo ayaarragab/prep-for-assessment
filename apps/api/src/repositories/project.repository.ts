@@ -1,34 +1,35 @@
-import { db } from '../db.js';
-import { Project, ProjectMember, UserRole } from '@teamflow/shared';
-import { v4 as uuidv4 } from 'uuid';
+import { db } from "../db.js";
+import { Project, ProjectMember, UserRole } from "@teamflow/shared";
+import { v4 as uuidv4 } from "uuid";
 
 export class ProjectRepository {
   static findById(id: string) {
-    const stmt = db.prepare('SELECT * FROM projects WHERE id = ?');
+    const stmt = db.prepare(
+      "SELECT id, name, description, owner_id as ownerId, created_at as createdAt FROM projects WHERE id = ?",
+    );
     return stmt.get(id) as any;
   }
 
   static findByUserId(userId: string) {
-
     const stmt = db.prepare(`
-      SELECT p.* FROM projects p
+      SELECT p.id, p.name, p.description, p.owner_id as ownerId, p.created_at as createdAt FROM projects p
       JOIN project_members pm ON p.id = pm.project_id
       WHERE pm.user_id = ?
     `);
     return stmt.all(userId) as any[];
   }
 
-  static create(project: Omit<Project, 'id' | 'createdAt'>) {
+  static create(project: Omit<Project, "id" | "createdAt">) {
     const id = uuidv4();
     const stmt = db.prepare(`
       INSERT INTO projects (id, name, description, owner_id)
       VALUES (?, ?, ?, ?)
     `);
     stmt.run(id, project.name, project.description, project.ownerId);
-    
+
     // Add owner as admin member
-    this.addMember(id, project.ownerId, 'admin');
-    
+    this.addMember(id, project.ownerId, "admin");
+
     return this.findById(id);
   }
 

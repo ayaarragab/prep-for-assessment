@@ -132,6 +132,8 @@ SELECT * FROM projects WHERE id = ?
 Although this is unlikely to be a significant issue for the current small query, retrieving unnecessary columns can increase data transfer and memory usage as the schema grows.
 
 **Solution:** Select only the columns required by the application instead of using `SELECT *`.
+**Justification:** This is a medium severity optimization because SELECT * pulls more data than needed, which increases memory usage and network overhead as the schema or dataset grows. Explicit column selection with proper aliasing (camelCase mapping) reduces payload size while maintaining code clarity and improving query intent.
+**Status**: solved
 
 ---
 
