@@ -3,6 +3,7 @@ import { AuthRequest } from "../middleware/auth.middleware.js";
 import { TaskRepository } from "../repositories/task.repository.js";
 import { ActivityRepository } from "../repositories/activity.repository.js";
 import { ProjectRepository } from "../repositories/project.repository.js";
+import { UserRepository } from "../repositories/user.repository.js";
 import { logger } from "../logger.js";
 
 export class TaskController {
@@ -47,8 +48,12 @@ export class TaskController {
         return res.status(403).json({ message: "Forbidden" });
       }
 
-      if (assigneeId && !members.find((member) => member.id === assigneeId)) {
-        return res.status(400).json({ message: "Invalid assignee" });
+      if (assigneeId) {
+        const assignee = UserRepository.findById(assigneeId);
+
+        if (!assignee || !members.find((member) => member.id === assigneeId)) {
+          return res.status(400).json({ message: "Invalid assignee" });
+        }
       }
 
       const task = TaskRepository.create({
