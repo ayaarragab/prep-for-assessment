@@ -1,0 +1,153 @@
+# Security Issues
+
+### 1. Hard-coded fallback JWT secret
+
+The application uses a hard-coded fallback value for `JWT_SECRET` when the environment variable is not configured. If the secret is missing in production, the application may sign tokens using a publicly known secret, allowing attackers to forge valid JWTs.
+
+**Solution:** Store the JWT secret exclusively in environment variables or a secure secret-management system, and fail application startup if the secret is missing instead of using a fallback value.
+
+---
+
+### 2. Hashed password exposed in the registration response
+
+The registration endpoint returns the complete `user` object, which includes the user's hashed password. Although the password is hashed, password hashes are sensitive credentials and should never be exposed to clients.
+
+**Solution:** Remove the password field from the user object before returning the registration response, consistently with the existing login implementation.
+
+---
+
+### 3. Insufficient input validation
+
+The current validation only checks whether `email`, `password`, and `name` are present. It does not validate their types, format, length, or acceptable values.
+
+**Solution:** Introduce a centralized input-validation layer using a schema validation library or equivalent validation mechanism. Validate and sanitize all externally controlled input before it reaches business logic or database operations.
+
+---
+
+### 4. Resource exhaustion risk on the registration endpoint
+
+Registration performs a computationally expensive `bcrypt.hash()` operation for every request. Without rate limiting, an attacker could send a large number of registration requests and consume significant CPU resources.
+
+**Solution:** Apply rate limiting to the registration endpoint and consider additional abuse-prevention mechanisms such as request throttling and appropriate registration constraints.
+
+---
+
+### 5. Brute-force risk on the login endpoint
+
+The login endpoint performs a bcrypt password comparison for every authentication attempt. Without rate limiting or other brute-force protections, an attacker can repeatedly attempt passwords against an account.
+
+**Solution:** Implement rate limiting and/or progressive delays for failed login attempts. Additional protections such as account-level throttling may also be appropriate.
+
+---
+
+### 6. Potential timing-based account enumeration
+
+The login flow returns immediately when a user does not exist, while an existing user causes an expensive `bcrypt.compare()` operation. This difference may allow an attacker to infer whether an account exists based on response timing.
+
+**Solution:** Perform a password-hash comparison for both existing and non-existing users by using a precomputed dummy bcrypt hash for the latter case, while also using consistent authentication responses and appropriate rate limiting.
+
+---
+
+### 7. Insufficient error logging and observability
+
+The controllers return a generic `500 Internal Server Error` response, but no error logging is visible in the reviewed code. If errors are not logged elsewhere, developers may have insufficient information to diagnose production failures.
+
+**Solution:** Implement centralized structured logging and ensure unexpected errors are recorded with sufficient context for debugging and monitoring, without exposing sensitive information to clients.
+
+---
+
+### 8. Broken Object-Level Authorization (BOLA)
+
+Several endpoints access or modify resources using user-controlled IDs without verifying that the authenticated user is authorized to access those specific resources. This may allow users to access or modify projects and tasks belonging to other users or projects they are not members of.
+
+Affected operations include project retrieval, project statistics, task creation, and task updates.
+
+**Solution:** Implement consistent resource-level authorization checks. Before accessing or modifying a project or task, verify that the authenticated user has the required relationship or permission for that resource, such as project membership, ownership, or an appropriate role.
+
+---
+
+### 9. Unsafe dynamic SQL construction in task updates
+
+`TaskRepository.update()` derives SQL column names directly from user-controlled object keys:
+
+`Object.keys(updates) → SQL column names`
+
+Although the values are parameterized, the column identifiers are interpolated directly into the SQL statement. This creates a SQL injection risk and also allows clients to attempt modifying fields that may not be intended to be user-editable.
+
+**Solution:** Use an explicit allowlist of permitted update fields and reject any unknown fields before constructing the SQL statement. Keep all SQL values parameterized.
+
+---
+
+### 10. Insufficient authorization for `assigneeId`
+
+The task creation endpoint accepts `assigneeId` directly from the request body without visibly verifying that the specified user is authorized to be assigned to the task. For example, a user may potentially assign a task to an arbitrary user who is not a member of the target project.
+
+**Solution:** Validate that the specified assignee exists, belongs to the relevant project, and is eligible to be assigned tasks according to the application's authorization rules.
+
+# Performance Issues
+
+### 1. Missing database indexes on frequently queried columns
+
+Several queries filter or join on `project_members.user_id` and `project_members.project_id`. If these columns are not properly indexed, the database may perform full table scans as the `project_members` table grows, resulting in slower queries and increased database load.
+
+**Affected queries:**
+
+* `ProjectRepository.findByUserId()` → `WHERE pm.user_id = ?`
+* `ProjectRepository.getMembers()` → `WHERE pm.project_id = ?`
+
+**Solution:** Add appropriate indexes, such as indexes on `project_members(user_id)` and `project_members(project_id)`. Verify the existing database schema before adding redundant indexes.
+
+---
+
+### 2. Unnecessary `SELECT *` queries
+
+Some repository methods retrieve all columns even when the application may only require a subset of them.
+
+For example:
+
+```sql
+SELECT * FROM projects WHERE id = ?
+```
+
+Although this is unlikely to be a significant issue for the current small query, retrieving unnecessary columns can increase data transfer and memory usage as the schema grows.
+
+**Solution:** Select only the columns required by the application instead of using `SELECT *`.
+
+---
+
+### 3. Multiple database operations during project creation
+
+Creating a project currently requires multiple database operations:
+
+1. Insert the project.
+2. Insert the owner as a project member.
+3. Query the newly created project again.
+
+This increases the number of database round trips for a single operation.
+
+**Solution:** Use a database transaction to group related operations and consider returning the created entity without requiring an additional query where practical.
+
+---
+
+### 4. Potential scalability issue in project membership queries
+
+`findByUserId()` and `getMembers()` rely on joins against the `project_members` table. These queries are reasonable for the current implementation, but their performance can degrade as the number of users, projects, and memberships increases if appropriate indexes are not present.
+
+**Solution:** Ensure the join/filter columns are indexed and use query-plan analysis such as `EXPLAIN QUERY PLAN` to verify that the database is using those indexes efficiently.
+### 5. Unoptimized text search on task title and description
+
+The `TaskRepository.search()` method performs a substring search using:
+
+```sql
+WHERE title LIKE ? OR description LIKE ?
+```
+
+with parameters in the form:
+
+```text
+%query%
+```
+
+This leading wildcard prevents standard B-tree indexes on `title` or `description` from being effectively used for the substring search in typical database configurations. As the number of tasks grows, the query may require scanning a large portion of the `tasks` table for every search request, increasing CPU and database load.
+
+**Solution:** Use an appropriate full-text search mechanism for substring/text search instead of relying on `%query%` with regular indexes. For SQLite, consider SQLite FTS5 for efficient full-text search. Alternatively, if the application requirements allow prefix-only search, change the query to use a prefix pattern such as `query%` and add appropriate indexes.

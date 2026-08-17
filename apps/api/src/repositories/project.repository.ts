@@ -9,8 +9,7 @@ export class ProjectRepository {
   }
 
   static findByUserId(userId: string) {
-    // Intentional performance issue: This could be optimized with a join
-    // But we'll keep it simple for now.
+
     const stmt = db.prepare(`
       SELECT p.* FROM projects p
       JOIN project_members pm ON p.id = pm.project_id
