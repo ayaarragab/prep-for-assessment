@@ -21,16 +21,37 @@ export class ProjectRepository {
 
   static create(project: Omit<Project, "id" | "createdAt">) {
     const id = uuidv4();
-    const stmt = db.prepare(`
+    const createdAt = new Date().toISOString();
+
+    // Prepare statements for transaction
+    const insertProject = db.prepare(`
       INSERT INTO projects (id, name, description, owner_id)
       VALUES (?, ?, ?, ?)
     `);
-    stmt.run(id, project.name, project.description, project.ownerId);
 
-    // Add owner as admin member
-    this.addMember(id, project.ownerId, "admin");
+    const insertMember = db.prepare(`
+      INSERT INTO project_members (project_id, user_id, role)
+      VALUES (?, ?, ?)
+    `);
 
-    return this.findById(id);
+    // Use a transaction to batch both inserts into a single database operation,
+    // eliminating the need for a separate SELECT query and reducing round trips
+    const transaction = db.transaction(() => {
+      insertProject.run(id, project.name, project.description, project.ownerId);
+      insertMember.run(id, project.ownerId, "admin");
+    });
+
+    transaction();
+
+    // Return constructed object directly without re-querying.
+    // The database automatically sets created_at via DEFAULT CURRENT_TIMESTAMP.
+    return {
+      id,
+      name: project.name,
+      description: project.description,
+      ownerId: project.ownerId,
+      createdAt,
+    };
   }
 
   static addMember(projectId: string, userId: string, role: UserRole) {
