@@ -58,6 +58,7 @@ The login flow returns immediately when a user does not exist, while an existing
 The controllers return a generic `500 Internal Server Error` response, but no error logging is visible in the reviewed code. If errors are not logged elsewhere, developers may have insufficient information to diagnose production failures.
 
 **Solution:** Implement centralized structured logging and ensure unexpected errors are recorded with sufficient context for debugging and monitoring, without exposing sensitive information to clients.
+**Status**: solved
 
 ---
 

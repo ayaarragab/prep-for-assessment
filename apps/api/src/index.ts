@@ -5,6 +5,7 @@ import { initDb } from "./db.js";
 import authRoutes from "./routes/auth.routes.js";
 import projectRoutes from "./routes/project.routes.js";
 import taskRoutes from "./routes/task.routes.js";
+import { logger } from "./logger.js";
 
 const app: Express = express();
 const port = process.env.PORT || 3001;
@@ -27,7 +28,7 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  logger.info({ port }, "Server running");
 });
 
 export default app;
