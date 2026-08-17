@@ -82,6 +82,7 @@ Affected operations include project retrieval, project statistics, task creation
 Although the values are parameterized, the column identifiers are interpolated directly into the SQL statement. This creates a SQL injection risk and also allows clients to attempt modifying fields that may not be intended to be user-editable.
 
 **Solution:** Use an explicit allowlist of permitted update fields and reject any unknown fields before constructing the SQL statement. Keep all SQL values parameterized.
+**Status**: solved
 
 ---
 

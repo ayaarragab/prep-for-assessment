@@ -24,8 +24,29 @@ export class TaskRepository {
   }
 
   static update(id: string, updates: Partial<Task>) {
-    const fields = Object.keys(updates).map(k => `${k} = ?`).join(', ');
-    const values = Object.values(updates);
+    const fieldMap: Record<keyof Pick<Task, 'title' | 'description' | 'status' | 'assigneeId'>, string> = {
+      title: 'title',
+      description: 'description',
+      status: 'status',
+      assigneeId: 'assignee_id'
+    };
+
+    const entries = Object.entries(updates).filter(([, value]) => value !== undefined);
+    const invalidFields = entries
+      .map(([key]) => key)
+      .filter((key): key is string => !(key in fieldMap));
+
+    if (invalidFields.length > 0) {
+      throw new Error(`Unsupported task update fields: ${invalidFields.join(', ')}`);
+    }
+
+    const fields = entries.map(([key]) => `${fieldMap[key as keyof typeof fieldMap]} = ?`).join(', ');
+
+    if (!fields) {
+      throw new Error('No valid task update fields provided');
+    }
+
+    const values = entries.map(([, value]) => value);
     const stmt = db.prepare(`UPDATE tasks SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`);
     stmt.run(...values, id);
     return this.findById(id);
