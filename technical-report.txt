@@ -148,6 +148,8 @@ Creating a project currently requires multiple database operations:
 This increases the number of database round trips for a single operation.
 
 **Solution:** Use a database transaction to group related operations and consider returning the created entity without requiring an additional query where practical.
+**Justification:** This is a medium severity performance issue because multiple round trips increase latency and overhead. Using a database transaction groups the two INSERT operations into a single atomic unit, and returning the constructed object directly instead of re-querying eliminates the unnecessary SELECT, reducing round trips from 3 to 1.
+**Status**: solved
 
 ---
 
