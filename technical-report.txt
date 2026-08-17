@@ -5,6 +5,7 @@
 The application uses a hard-coded fallback value for `JWT_SECRET` when the environment variable is not configured. If the secret is missing in production, the application may sign tokens using a publicly known secret, allowing attackers to forge valid JWTs.
 
 **Solution:** Store the JWT secret exclusively in environment variables or a secure secret-management system, and fail application startup if the secret is missing instead of using a fallback value.
+**Justification:** This is a critical issue because a missing secret can let an attacker forge JWTs and take over accounts. The fix removes the fallback and forces token creation to fail unless a real secret is configured, which closes the forgery path at the source.
 **Status**: solved
 ---
 
@@ -13,6 +14,7 @@ The application uses a hard-coded fallback value for `JWT_SECRET` when the envir
 The registration endpoint returns the complete `user` object, which includes the user's hashed password. Although the password is hashed, password hashes are sensitive credentials and should never be exposed to clients.
 
 **Solution:** Remove the password field from the user object before returning the registration response, consistently with the existing login implementation.
+**Justification:** This is high severity because hashed passwords are still credential material and exposing them increases offline cracking risk. Stripping the password before responding prevents leakage while keeping the successful registration flow intact.
 **Status**: solved
 
 ---
@@ -22,6 +24,7 @@ The registration endpoint returns the complete `user` object, which includes the
 The current validation only checks whether `email`, `password`, and `name` are present. It does not validate their types, format, length, or acceptable values.
 
 **Solution:** Introduce a centralized input-validation layer using a schema validation library or equivalent validation mechanism. Validate and sanitize all externally controlled input before it reaches business logic or database operations.
+**Justification:** This is medium to high severity because unvalidated input can trigger malformed requests, unexpected behavior, and unsafe downstream operations. Schema validation is the right fix because it rejects bad payloads before they reach controllers or repositories.
 **Status**: solved
 
 ---
@@ -31,6 +34,7 @@ The current validation only checks whether `email`, `password`, and `name` are p
 Registration performs a computationally expensive `bcrypt.hash()` operation for every request. Without rate limiting, an attacker could send a large number of registration requests and consume significant CPU resources.
 
 **Solution:** Apply rate limiting to the registration endpoint and consider additional abuse-prevention mechanisms such as request throttling and appropriate registration constraints.
+**Justification:** This is a high severity resource-exhaustion risk because repeated registrations force expensive bcrypt hashing and can consume CPU. Rate limiting directly reduces abuse volume at the entry point, which is the most effective control for this kind of attack.
 **Status**: solved
 
 ---
@@ -49,6 +53,7 @@ The login endpoint performs a bcrypt password comparison for every authenticatio
 The login flow returns immediately when a user does not exist, while an existing user causes an expensive `bcrypt.compare()` operation. This difference may allow an attacker to infer whether an account exists based on response timing.
 
 **Solution:** Perform a password-hash comparison for both existing and non-existing users by using a precomputed dummy bcrypt hash for the latter case, while also using consistent authentication responses and appropriate rate limiting.
+**Justification:** This is medium severity because an attacker can use timing differences to enumerate valid accounts and improve brute-force targeting. Using a dummy hash forces both branches to take the same expensive path, which removes the timing signal without weakening authentication.
 **Status**: solved
 
 ---
@@ -58,6 +63,7 @@ The login flow returns immediately when a user does not exist, while an existing
 The controllers return a generic `500 Internal Server Error` response, but no error logging is visible in the reviewed code. If errors are not logged elsewhere, developers may have insufficient information to diagnose production failures.
 
 **Solution:** Implement centralized structured logging and ensure unexpected errors are recorded with sufficient context for debugging and monitoring, without exposing sensitive information to clients.
+**Justification:** This is a medium severity operational issue because silent failures slow incident response and can hide real production bugs. Structured logging is the right fix because it preserves the generic client response while giving operators enough context to diagnose failures safely.
 **Status**: solved
 
 ---
@@ -69,6 +75,7 @@ Several endpoints access or modify resources using user-controlled IDs without v
 Affected operations include project retrieval, project statistics, task creation, and task updates.
 
 **Solution:** Implement consistent resource-level authorization checks. Before accessing or modifying a project or task, verify that the authenticated user has the required relationship or permission for that resource, such as project membership, ownership, or an appropriate role.
+**Justification:** This is critical because user-controlled IDs can expose or modify other tenants' data if access checks are missing. Verifying membership at the controller boundary is the right fix because it blocks unauthorized reads and writes before repository access.
 **Status**: solved
 
 ---
@@ -82,6 +89,7 @@ Affected operations include project retrieval, project statistics, task creation
 Although the values are parameterized, the column identifiers are interpolated directly into the SQL statement. This creates a SQL injection risk and also allows clients to attempt modifying fields that may not be intended to be user-editable.
 
 **Solution:** Use an explicit allowlist of permitted update fields and reject any unknown fields before constructing the SQL statement. Keep all SQL values parameterized.
+**Justification:** This is high severity because interpolating user-controlled keys into SQL can lead to injection or unintended field updates. An explicit allowlist is the right fix because it constrains updates to known-safe columns while preserving parameterization for values.
 **Status**: solved
 
 ---
@@ -91,6 +99,7 @@ Although the values are parameterized, the column identifiers are interpolated d
 The task creation endpoint accepts `assigneeId` directly from the request body without visibly verifying that the specified user is authorized to be assigned to the task. For example, a user may potentially assign a task to an arbitrary user who is not a member of the target project.
 
 **Solution:** Validate that the specified assignee exists, belongs to the relevant project, and is eligible to be assigned tasks according to the application's authorization rules.
+**Justification:** This is a medium severity authorization gap because it lets callers assign work to users outside the intended project boundary. Requiring both existence and project membership is the correct fix because it enforces the business rule before the task is created.
 **Status**: solved
 
 # Performance Issues
@@ -105,6 +114,7 @@ Several queries filter or join on `project_members.user_id` and `project_members
 * `ProjectRepository.getMembers()` → `WHERE pm.project_id = ?`
 
 **Solution:** Add appropriate indexes, such as indexes on `project_members(user_id)` and `project_members(project_id)`. Verify the existing database schema before adding redundant indexes.
+**Justification:** This is a performance issue that can become high impact as data grows because joins and membership lookups will otherwise devolve into table scans. Adding the missing index is the right fix because it targets the exact filtered column already used by the affected queries.
 **Status**: solved
 
 ---

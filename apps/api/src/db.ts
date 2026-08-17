@@ -1,13 +1,13 @@
-import Database, { Database as DatabaseInstance } from 'better-sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import Database, { Database as DatabaseInstance } from "better-sqlite3";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.resolve(__dirname, '../data/teamflow.db');
+const dbPath = path.resolve(__dirname, "../data/teamflow.db");
 
 export const db: DatabaseInstance = new Database(dbPath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
 
 export function initDb() {
   db.exec(`
