@@ -1,0 +1,27 @@
+{
+  "name": "teamflow-monorepo",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "TeamFlow Practice Assessment",
+  "scripts": {
+    "dev": "pnpm --filter \"*\" --parallel dev",
+    "build": "pnpm --filter \"*\" build",
+    "test": "pnpm --filter \"*\" test",
+    "test:unit": "pnpm --filter \"*\" test:unit",
+    "test:e2e": "pnpm --filter \"web\" test:e2e",
+    "lint": "pnpm --filter \"*\" lint",
+    "typecheck": "pnpm --filter \"*\" typecheck",
+    "db:setup": "pnpm --filter \"api\" db:setup",
+    "db:seed": "pnpm --filter \"api\" db:seed"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^9.9.0",
+    "eslint-plugin-react": "^7.37.5",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.67.0"
+  },
+  "packageManager": "pnpm@9.7.1"
+}

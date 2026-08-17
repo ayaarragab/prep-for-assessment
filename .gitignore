@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
+.pnpm-debug.log
+.bin/
+.data/
+**/data/teamflow.db
+test-results/
+playwright-report/
+playwright/.cache/
