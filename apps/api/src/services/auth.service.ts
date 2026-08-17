@@ -4,6 +4,8 @@ import { UserRepository } from "../repositories/user.repository.js";
 import { AuthResponse, User } from "@teamflow/shared";
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const DUMMY_PASSWORD_HASH =
+  "$2a$10$D/J9.PCHhhYqB4vUBwn44e5l8vlKf7O5M.sBPIcDV9sCoNLzbRwh.";
 
 function getJwtSecret(): string {
   if (!JWT_SECRET) {
@@ -40,10 +42,9 @@ export class AuthService {
     password: string,
   ): Promise<AuthResponse | null> {
     const user = UserRepository.findByEmail(email);
-    if (!user) return null;
-
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) return null;
+    const passwordHash = user?.password ?? DUMMY_PASSWORD_HASH;
+    const isValid = await bcrypt.compare(password, passwordHash);
+    if (!user || !isValid) return null;
 
     const token = jwt.sign({ id: user.id, role: user.role }, getJwtSecret(), {
       expiresIn: "24h",

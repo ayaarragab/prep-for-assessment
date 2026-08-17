@@ -49,6 +49,7 @@ The login endpoint performs a bcrypt password comparison for every authenticatio
 The login flow returns immediately when a user does not exist, while an existing user causes an expensive `bcrypt.compare()` operation. This difference may allow an attacker to infer whether an account exists based on response timing.
 
 **Solution:** Perform a password-hash comparison for both existing and non-existing users by using a precomputed dummy bcrypt hash for the latter case, while also using consistent authentication responses and appropriate rate limiting.
+**Status**: solved
 
 ---
 
