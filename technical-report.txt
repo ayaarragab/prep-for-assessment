@@ -105,6 +105,7 @@ Several queries filter or join on `project_members.user_id` and `project_members
 * `ProjectRepository.getMembers()` → `WHERE pm.project_id = ?`
 
 **Solution:** Add appropriate indexes, such as indexes on `project_members(user_id)` and `project_members(project_id)`. Verify the existing database schema before adding redundant indexes.
+**Status**: solved
 
 ---
 
