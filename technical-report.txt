@@ -158,6 +158,9 @@ This increases the number of database round trips for a single operation.
 `findByUserId()` and `getMembers()` rely on joins against the `project_members` table. These queries are reasonable for the current implementation, but their performance can degrade as the number of users, projects, and memberships increases if appropriate indexes are not present.
 
 **Solution:** Ensure the join/filter columns are indexed and use query-plan analysis such as `EXPLAIN QUERY PLAN` to verify that the database is using those indexes efficiently.
+**Justification:** This is a medium-to-high severity scalability concern because unindexed joins devolve into table scans as data grows. The required indexes on `project_members(user_id)` and `project_members(project_id)` are already present in the schema (added in Performance Issue #1), which allows both queries to use B-tree index lookups and nested-loop joins efficiently.
+**Status**: solved
+
 ### 5. Unoptimized text search on task title and description
 
 The `TaskRepository.search()` method performs a substring search using:
