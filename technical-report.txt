@@ -69,6 +69,7 @@ Several endpoints access or modify resources using user-controlled IDs without v
 Affected operations include project retrieval, project statistics, task creation, and task updates.
 
 **Solution:** Implement consistent resource-level authorization checks. Before accessing or modifying a project or task, verify that the authenticated user has the required relationship or permission for that resource, such as project membership, ownership, or an appropriate role.
+**Status**: solved
 
 ---
 
@@ -89,6 +90,7 @@ Although the values are parameterized, the column identifiers are interpolated d
 The task creation endpoint accepts `assigneeId` directly from the request body without visibly verifying that the specified user is authorized to be assigned to the task. For example, a user may potentially assign a task to an arbitrary user who is not a member of the target project.
 
 **Solution:** Validate that the specified assignee exists, belongs to the relevant project, and is eligible to be assigned tasks according to the application's authorization rules.
+**Status**: solved
 
 # Performance Issues
 

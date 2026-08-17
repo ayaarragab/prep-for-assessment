@@ -35,6 +35,21 @@ export class TaskController {
   static async create(req: AuthRequest, res: Response) {
     try {
       const { projectId, title, description, status, assigneeId } = req.body;
+      const project = ProjectRepository.findById(projectId);
+
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const members = ProjectRepository.getMembers(projectId);
+
+      if (!members.find((member) => member.id === req.user!.id)) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (assigneeId && !members.find((member) => member.id === assigneeId)) {
+        return res.status(400).json({ message: "Invalid assignee" });
+      }
 
       const task = TaskRepository.create({
         projectId,
@@ -72,8 +87,19 @@ export class TaskController {
     try {
       const { id } = req.params;
       const updates = req.body;
+      const task = TaskRepository.findById(id);
 
-      const task = TaskRepository.update(id, updates);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      const members = ProjectRepository.getMembers(task.project_id);
+
+      if (!members.find((member) => member.id === req.user!.id)) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const updatedTask = TaskRepository.update(id, updates);
 
       ActivityRepository.create({
         userId: req.user!.id,
@@ -83,7 +109,7 @@ export class TaskController {
         metadata: JSON.stringify(updates),
       });
 
-      res.json(task);
+      res.json(updatedTask);
     } catch (error) {
       logger.error(
         {

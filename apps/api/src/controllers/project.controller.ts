@@ -28,6 +28,12 @@ export class ProjectController {
         return res.status(404).json({ message: "Project not found" });
       }
 
+      const members = ProjectRepository.getMembers(id);
+
+      if (!members.find((member) => member.id === req.user!.id)) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
       res.json(project);
     } catch (error) {
       logger.error(
@@ -73,6 +79,18 @@ export class ProjectController {
   static async getStats(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
+
+      const project = ProjectRepository.findById(id);
+
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const members = ProjectRepository.getMembers(id);
+
+      if (!members.find((member) => member.id === req.user!.id)) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
 
       const tasks = db
         .prepare("SELECT * FROM tasks WHERE project_id = ?")
