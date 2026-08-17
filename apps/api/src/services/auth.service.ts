@@ -30,7 +30,9 @@ export class AuthService {
     const token = jwt.sign({ id: user.id, role: user.role }, getJwtSecret(), {
       expiresIn: "24h",
     });
-    return { user, token };
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { user: userWithoutPassword, token };
   }
 
   static async login(

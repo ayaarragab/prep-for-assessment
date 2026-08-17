@@ -5,7 +5,7 @@
 The application uses a hard-coded fallback value for `JWT_SECRET` when the environment variable is not configured. If the secret is missing in production, the application may sign tokens using a publicly known secret, allowing attackers to forge valid JWTs.
 
 **Solution:** Store the JWT secret exclusively in environment variables or a secure secret-management system, and fail application startup if the secret is missing instead of using a fallback value.
-
+**Status**: solved
 ---
 
 ### 2. Hashed password exposed in the registration response
