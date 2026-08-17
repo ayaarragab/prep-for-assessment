@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { UserRepository } from '../repositories/user.repository.js';
 import { AuthResponse, User } from '@teamflow/shared';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export class AuthService {
   static async register(email: string, password: string, name: string): Promise<AuthResponse> {
