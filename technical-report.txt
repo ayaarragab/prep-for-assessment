@@ -31,6 +31,7 @@ The current validation only checks whether `email`, `password`, and `name` are p
 Registration performs a computationally expensive `bcrypt.hash()` operation for every request. Without rate limiting, an attacker could send a large number of registration requests and consume significant CPU resources.
 
 **Solution:** Apply rate limiting to the registration endpoint and consider additional abuse-prevention mechanisms such as request throttling and appropriate registration constraints.
+**Status**: solved
 
 ---
 
@@ -39,6 +40,7 @@ Registration performs a computationally expensive `bcrypt.hash()` operation for 
 The login endpoint performs a bcrypt password comparison for every authentication attempt. Without rate limiting or other brute-force protections, an attacker can repeatedly attempt passwords against an account.
 
 **Solution:** Implement rate limiting and/or progressive delays for failed login attempts. Additional protections such as account-level throttling may also be appropriate.
+**Status**: partially solved
 
 ---
 
